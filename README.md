@@ -1,6 +1,6 @@
 # Sistema de Gestión de Pedidos (UADE - Programación II)
 
-Este proyecto implementa un sistema de gestión de pedidos para un restaurante, desarrollado en Java aplicando los Tipos de Datos Abstractos (TDA) vistos en la materia.
+Este proyecto implementa un sistema de gestión de pedidos para un restaurante, desarrollado en Java aplicando los Tipos de Datos Abstractos (TDA) .
 El sistema permite registrar pedidos, prepararlos, entregarlos y generar reportes estadísticos.
 
 ## Funcionalidades principales
