@@ -165,14 +165,14 @@ class Cocina { // COLA
 
             Main.platos.add(pedido);
 
-            // ✅ Mostrar todos los platos y el estado actual
+            //  Mostrar todos los platos y el estado actual
             System.out.print("Pedido ");
             for (int i = 0; i < pedidoData.platos.length; i++) {
                 System.out.print(pedidoData.platos[i]);
                 if (i < pedidoData.platos.length - 1) System.out.print(", ");
             }
 
-            // ✅ Mostrar prioridad y estado en la misma línea
+            //  Mostrar prioridad y estado en la misma línea
             System.out.println(" | Prioridad: " + prioridad + " | Estado: " + pedidoData.getEstado());
 
             copiaPedidos.remove();
