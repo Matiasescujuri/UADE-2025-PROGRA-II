@@ -49,6 +49,8 @@ public class Main { //==========================================================
 
 // ====================== CLASE INGRESO PEDIDOS ======================
 
+// ====================== CLASE INGRESO PEDIDOS ======================
+
 class IngresoPedidos { //   Cola de prioridad
     public static void ingresoPedidos() {
         Main.sc.nextLine();
@@ -70,44 +72,75 @@ class IngresoPedidos { //   Cola de prioridad
             return;
         }
 
-        System.out.print("\nIngrese número de comida: ");
-        int opcioncomida;
+        // === BLOQUE NUEVO: VARIOS PLATOS POR PEDIDO ===
+        System.out.print("\n¿Cuántos platos desea agregar al pedido? ");
+        int cantidadPlatos;
         if (Main.sc.hasNextInt()) {
-            opcioncomida = Main.sc.nextInt();
+            cantidadPlatos = Main.sc.nextInt();
+            Main.sc.nextLine(); // limpiar buffer
         } else {
-            System.out.println(" Ingrese un número válido (1-3).");
+            System.out.println("Ingrese un número válido.");
             Main.sc.next();
             return;
         }
 
-        String nombrepedido = switch (opcioncomida) {
-            case 1 -> "Pizza";
-            case 2 -> "Empanadas";
-            case 3 -> "Hamburguesa";
-            default -> {
-                System.out.println("Opción no válida");
-                yield "";
+        if (cantidadPlatos <= 0) {
+            System.out.println("Debe ingresar al menos un plato.");
+            return;
+        }
+
+        String[] platosPedido = new String[cantidadPlatos];
+        for (int i = 0; i < cantidadPlatos; i++) {
+            System.out.print("\nIngrese número de comida #" + (i + 1) + ": ");
+            int opcioncomida;
+            if (Main.sc.hasNextInt()) {
+                opcioncomida = Main.sc.nextInt();
+                Main.sc.nextLine(); // limpiar buffer
+            } else {
+                System.out.println(" Ingrese un número válido (1-3).");
+                Main.sc.next();
+                i--; // repetir el mismo índice
+                continue;
             }
-        };
 
-        if (nombrepedido.isEmpty()) return;
+            String nombrePlato = switch (opcioncomida) {
+                case 1 -> "Pizza";
+                case 2 -> "Empanadas";
+                case 3 -> "Hamburguesa";
+                default -> {
+                    System.out.println("Opción no válida.");
+                    yield "";
+                }
+            };
 
-        System.out.println("=== Ingrese el nivel de prioridad (1-10) ===");
+            if (!nombrePlato.isEmpty()) platosPedido[i] = nombrePlato;
+            else i--; // si fue inválido, repetir
+        }
+
+        // === Prioridad ===
+        System.out.println("\nIngrese el nivel de prioridad (1-10): ");
         int prioridad = Main.sc.nextInt();
 
-        Pedido nuevoPedido = new Pedido(new String[]{nombrepedido, nombreCliente}, prioridad);
+        Pedido nuevoPedido = new Pedido(platosPedido, prioridad);
         nuevoPedido.setEstado(estadoPedido.PENDIENTE);
 
         Main.registros[Main.contadorPedidos] = nuevoPedido;
-        Main.pedidos.add(Main.contadorPedidos, prioridad); //  Uso del TDA: PriorityQueueADT
+        Main.pedidos.add(Main.contadorPedidos, prioridad); // Uso del TDA: PriorityQueueADT
 
         Main.contadorPedidos++;
 
-        System.out.println("=== PEDIDO AGREGADO ===");
+        // === Confirmación ===
+        System.out.println("\n=== PEDIDO AGREGADO ===");
         System.out.println("Cliente: " + nombreCliente);
-        System.out.println("Pedido: " + nombrepedido + " // PRIORIDAD: " + prioridad);
+        System.out.print("Platos: ");
+        for (int i = 0; i < platosPedido.length; i++) {
+            System.out.print(platosPedido[i]);
+            if (i < platosPedido.length - 1) System.out.print(", ");
+        }
+        System.out.println("\nPRIORIDAD: " + prioridad);
     }
 }
+
 
 
 // ====================== CLASE COCINA ======================                       COLA===================
@@ -123,27 +156,37 @@ class Cocina { // COLA
 
         PriorityQueueADT copiaPedidos = Utilidades.copiarColaPrioridad(Main.pedidos);
 
-        while (!Main.platos.isEmpty()) Main.platos.remove(); // tda queueADT
+        while (!Main.platos.isEmpty()) Main.platos.remove(); // limpiar cola
 
-        while (!copiaPedidos.isEmpty()) { // RECORRIDO POR LA COLA DE PRIORIDAD
+        while (!copiaPedidos.isEmpty()) {
             int pedido = (int) copiaPedidos.getElement();
             int prioridad = (int) copiaPedidos.getPriority();
             Pedido pedidoData = Main.registros[pedido];
 
-            Main.platos.add(pedido); // ENCOLAMOS EN LIFO
-            System.out.println("Pedido " + pedidoData.platos[0] +
-                    " enviado a cocina (prioridad " + prioridad +
-                    ", estado: " + pedidoData.estado + ")");
+            Main.platos.add(pedido);
+
+            // ✅ Mostrar todos los platos y el estado actual
+            System.out.print("Pedido ");
+            for (int i = 0; i < pedidoData.platos.length; i++) {
+                System.out.print(pedidoData.platos[i]);
+                if (i < pedidoData.platos.length - 1) System.out.print(", ");
+            }
+
+            // ✅ Mostrar prioridad y estado en la misma línea
+            System.out.println(" | Prioridad: " + prioridad + " | Estado: " + pedidoData.getEstado());
+
             copiaPedidos.remove();
         }
-// SE TRANSFIERE A UNA COLA LIFO
-        System.out.println("Pedidos enviados a la cocina.");
+
+        System.out.println("=== Pedidos enviados a la cocina ===");
+
         QueueADT copiaPlatos = Utilidades.copiarCola(Main.platos);
         Utilidades.pasarColaAPila(copiaPlatos);
 
         Main.pedidos = Utilidades.limpiarColaFinalizados(Main.pedidos);
     }
 }
+
 
 
 // ====================== CLASE ENTREGAS ===================================================== GRAFO ==============
@@ -186,7 +229,15 @@ class Entregas { // GRAFO
 
         System.out.println("Ruta: " + origen + " → " + destino + " (" + distancia + " min)");
         p.setEstado(estadoPedido.FINALIZADO);
-        System.out.println(" Pedido entregado: " + p.platos[0] + " | Estado: " + p.getEstado());
+        System.out.print(" Pedido entregado: ");
+
+
+        for (int i = 0; i < p.platos.length; i++) { // RECORRE LA LISTA
+            System.out.print(p.platos[i]);
+            if (i < p.platos.length - 1) System.out.print(", ");
+        }
+        System.out.println(" | Estado: " + p.getEstado());
+
 
         Main.pedidos = Utilidades.limpiarColaFinalizados(Main.pedidos);
     }
@@ -202,37 +253,41 @@ class ReportesYAnalisis { // SIMPLE DICTIONARY
         SimpleDictionaryADT dicEstados = new SimpleDictionary();
         SimpleDictionaryADT dicComidas = new SimpleDictionary();
 
+        // 🔹 Inicializar claves para evitar null
+        dicEstados.add(0, 0); // Pendientes
+        dicEstados.add(1, 0); // Finalizados
+        dicComidas.add(1, 0); // Pizza
+        dicComidas.add(2, 0); // Empanadas
+        dicComidas.add(3, 0); // Hamburguesa
+
         for (int i = 0; i < Main.contadorPedidos; i++) {
             Pedido p = Main.registros[i];
             if (p == null) continue;
-// SIMPLE DICCIONARY
+
+            // 🔹 Estado del pedido
             int keyEstado = (p.getEstado() == estadoPedido.FINALIZADO) ? 1 : 0;
             int valorEstado = dicEstados.get(keyEstado);
             dicEstados.add(keyEstado, valorEstado + 1);
 
-            int valorComida = 0;
-            SetADT clavesC = dicComidas.getKeys();
+            // 🔹 Conteo de comidas (ahora recorre todos los platos)
+            for (int j = 0; j < p.platos.length; j++) {
+                int keyComida = switch (p.platos[j]) {
+                    case "Pizza" -> 1;
+                    case "Empanadas" -> 2;
+                    default -> 3;
+                };
 
-            int keyComida = switch (p.platos[0]) {
-                case "Pizza" -> 1;
-                case "Empanadas" -> 2;
-                default -> 3;
-            };
-
-            while (!clavesC.isEmpty()) {
-                int clave = clavesC.choose();
-                if (clave == keyComida) valorComida = dicComidas.get(clave);
-                clavesC.remove(clave);
+                int valorComida = dicComidas.get(keyComida);
+                dicComidas.add(keyComida, valorComida + 1);
             }
-
-            dicComidas.add(keyComida, valorComida + 1);
         }
 
-        System.out.println("\n ESTADO DE LOS PEDIDOS:");
+        // 🔹 Mostrar resultados
+        System.out.println("\nESTADO DE LOS PEDIDOS:");
         System.out.println("Pendientes: " + dicEstados.get(0));
         System.out.println("Finalizados: " + dicEstados.get(1));
 
-        System.out.println("\n COMIDAS MÁS PEDIDAS:");
+        System.out.println("\nCOMIDAS MÁS PEDIDAS:");
         SetADT clavesComida = dicComidas.getKeys();
         while (!clavesComida.isEmpty()) {
             int clave = clavesComida.choose();
@@ -245,9 +300,10 @@ class ReportesYAnalisis { // SIMPLE DICTIONARY
             clavesComida.remove(clave);
         }
 
-        System.out.println("\n Total de pedidos registrados: " + Main.contadorPedidos);
+        System.out.println("\nTotal de pedidos registrados: " + Main.contadorPedidos);
     }
 }
+
 
 
 // ====================== CLASE UTILIDADES ======================
