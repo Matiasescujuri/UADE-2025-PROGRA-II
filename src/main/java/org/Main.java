@@ -20,10 +20,10 @@ public class Main { //==========================================================
         int opcion;
         do {
             System.out.println("\n=== GESTION DE PEDIDOS ===");
-            System.out.println("1. Ingreso y clasificacion de pedidos");
-            System.out.println("2. Preparacion de platos en Cocina");
-            System.out.println("3. Entrega de pedidos");
-            System.out.println("4. Reportes y analisis");
+            System.out.println("1. Ingreso y clasificacion de pedidos"); // Cola de prioridad
+            System.out.println("2. Preparacion de platos en Cocina"); // cola
+            System.out.println("3. Entrega de pedidos"); // grafos y LIFO
+            System.out.println("4. Reportes y analisis");// Simple dictionary
             System.out.println("5. Salir");
             System.out.print("SELECCIONE UNA OPCION: ");
             if (sc.hasNextInt()) {
@@ -49,8 +49,7 @@ public class Main { //==========================================================
 
 // ====================== CLASE INGRESO PEDIDOS ======================
 
-class IngresoPedidos {// ========================================================= PEDIDOS ================
-
+class IngresoPedidos { //   Cola de prioridad
     public static void ingresoPedidos() {
         Main.sc.nextLine();
 
@@ -81,16 +80,17 @@ class IngresoPedidos {// =======================================================
             return;
         }
 
-        String nombrepedido = "";
-        switch (opcioncomida) {
-            case 1 -> nombrepedido = "Pizza";
-            case 2 -> nombrepedido = "Empanadas";
-            case 3 -> nombrepedido = "Hamburguesa";
+        String nombrepedido = switch (opcioncomida) {
+            case 1 -> "Pizza";
+            case 2 -> "Empanadas";
+            case 3 -> "Hamburguesa";
             default -> {
                 System.out.println("Opción no válida");
-                return;
+                yield "";
             }
-        }
+        };
+
+        if (nombrepedido.isEmpty()) return;
 
         System.out.println("=== Ingrese el nivel de prioridad (1-10) ===");
         int prioridad = Main.sc.nextInt();
@@ -99,7 +99,8 @@ class IngresoPedidos {// =======================================================
         nuevoPedido.setEstado(estadoPedido.PENDIENTE);
 
         Main.registros[Main.contadorPedidos] = nuevoPedido;
-        Main.pedidos.add(Main.contadorPedidos, prioridad);
+        Main.pedidos.add(Main.contadorPedidos, prioridad); //  Uso del TDA: PriorityQueueADT
+
         Main.contadorPedidos++;
 
         System.out.println("=== PEDIDO AGREGADO ===");
@@ -109,10 +110,9 @@ class IngresoPedidos {// =======================================================
 }
 
 
-// ====================== CLASE COCINA ======================
+// ====================== CLASE COCINA ======================                       COLA===================
 
-class Cocina {//=================================================================== COCINA
-
+class Cocina { // COLA
     public static void prepararPlatos() {
         System.out.println("=== PREPARACIÓN DE PLATOS ===");
 
@@ -123,20 +123,20 @@ class Cocina {//================================================================
 
         PriorityQueueADT copiaPedidos = Utilidades.copiarColaPrioridad(Main.pedidos);
 
-        while (!Main.platos.isEmpty()) Main.platos.remove();
+        while (!Main.platos.isEmpty()) Main.platos.remove(); // tda queueADT
 
-        while (!copiaPedidos.isEmpty()) {
+        while (!copiaPedidos.isEmpty()) { // RECORRIDO POR LA COLA DE PRIORIDAD
             int pedido = (int) copiaPedidos.getElement();
             int prioridad = (int) copiaPedidos.getPriority();
             Pedido pedidoData = Main.registros[pedido];
 
-            Main.platos.add(pedido);
+            Main.platos.add(pedido); // ENCOLAMOS EN LIFO
             System.out.println("Pedido " + pedidoData.platos[0] +
                     " enviado a cocina (prioridad " + prioridad +
                     ", estado: " + pedidoData.estado + ")");
             copiaPedidos.remove();
         }
-
+// SE TRANSFIERE A UNA COLA LIFO
         System.out.println("Pedidos enviados a la cocina.");
         QueueADT copiaPlatos = Utilidades.copiarCola(Main.platos);
         Utilidades.pasarColaAPila(copiaPlatos);
@@ -146,10 +146,9 @@ class Cocina {//================================================================
 }
 
 
-// ====================== CLASE ENTREGAS ======================
+// ====================== CLASE ENTREGAS ===================================================== GRAFO ==============
 
-class Entregas { //=============================================================== ENTREGAS
-
+class Entregas { // GRAFO
     public static void entregas() {
         System.out.println("=== ENTREGA DE PEDIDOS ===");
 
@@ -158,23 +157,32 @@ class Entregas { //=============================================================
             return;
         }
 
-        int id = (int) Main.Analisis.getElement();
-        Main.Analisis.remove();
+        int id = (int) Main.Analisis.getElement();  // LIFO TOMA EL ULTIMO ELEMENTO
+        Main.Analisis.remove(); // SACA EL ELEMENTO
 
         Pedido p = Main.registros[id];
 
-        String origen = "Cocina Central";
-        String destino = switch (id % 3) {
-            case 0 -> "Grito del Corto 3028";
-            case 1 -> "Hipólito Yrigoyen 962";
-            default -> "Plaza Principal";
+        // --- GRAFO DE ENTREGAS ---
+        Grafo grafo = new Grafo(4); // UBICACIONES
+        grafo.agregarNodo(0, "Cocina Central");
+        grafo.agregarNodo(1, "Grito del Corto 3028");
+        grafo.agregarNodo(2, "Hipólito Yrigoyen 962");
+        grafo.agregarNodo(3, "Plaza Principal");
+
+        grafo.agregarConexion(0, 1, 7);
+        grafo.agregarConexion(0, 2, 12);
+        grafo.agregarConexion(0, 3, 6);
+        grafo.agregarConexion(1, 3, 8);
+
+        int destinoIndex = switch (id % 3) {
+            case 0 -> 1;
+            case 1 -> 2;
+            default -> 3;
         };
 
-        int distancia = switch (id % 3) {
-            case 0 -> 7;
-            case 1 -> 12;
-            default -> 6;
-        };
+        String origen = grafo.getNodo(0);
+        String destino = grafo.getNodo(destinoIndex);
+        int distancia = grafo.getDistancia(0, destinoIndex);
 
         System.out.println("Ruta: " + origen + " → " + destino + " (" + distancia + " min)");
         p.setEstado(estadoPedido.FINALIZADO);
@@ -185,10 +193,9 @@ class Entregas { //=============================================================
 }
 
 
-// ====================== CLASE REPORTES Y ANALISIS ======================
+// ====================== CLASE REPORTES Y ANALISIS ===============================SIMPLE DICTIONARY==================
 
-class ReportesYAnalisis { //================================================ REPORTES Y ANALISIS =============
-
+class ReportesYAnalisis { // SIMPLE DICTIONARY
     public static void reportesYAnalisis() {
         System.out.println("=== REPORTES Y ANÁLISIS ===");
 
@@ -198,13 +205,10 @@ class ReportesYAnalisis { //================================================ REP
         for (int i = 0; i < Main.contadorPedidos; i++) {
             Pedido p = Main.registros[i];
             if (p == null) continue;
-
-            // ESTADOS
+// SIMPLE DICCIONARY
             int keyEstado = (p.getEstado() == estadoPedido.FINALIZADO) ? 1 : 0;
             int valorEstado = dicEstados.get(keyEstado);
             dicEstados.add(keyEstado, valorEstado + 1);
-
-
 
             int valorComida = 0;
             SetADT clavesC = dicComidas.getKeys();
@@ -217,15 +221,11 @@ class ReportesYAnalisis { //================================================ REP
 
             while (!clavesC.isEmpty()) {
                 int clave = clavesC.choose();
-                if (clave == keyComida) {
-                    valorComida = dicComidas.get(clave);
-                }
+                if (clave == keyComida) valorComida = dicComidas.get(clave);
                 clavesC.remove(clave);
             }
 
             dicComidas.add(keyComida, valorComida + 1);
-
-
         }
 
         System.out.println("\n ESTADO DE LOS PEDIDOS:");
@@ -252,8 +252,7 @@ class ReportesYAnalisis { //================================================ REP
 
 // ====================== CLASE UTILIDADES ======================
 
-class Utilidades { // ======================================================================== utilidades ====
-
+class Utilidades {
     public static PriorityQueueADT copiarColaPrioridad(PriorityQueueADT original) {
         PriorityQueueADT copia = new ColaPrioridad(10);
         PriorityQueueADT aux = new ColaPrioridad(10);
@@ -318,5 +317,47 @@ class Utilidades { // ==========================================================
         }
 
         return nuevaCola;
+    }
+}
+
+
+// ====================== CLASE GRAFO ======================
+
+class Grafo {
+    private final String[] nodos;
+    private final int[][] matriz;
+    private final int cantidad;
+
+    public Grafo(int cantidad) {
+        this.cantidad = cantidad;
+        nodos = new String[cantidad];
+        matriz = new int[cantidad][cantidad];
+    }
+
+    public void agregarNodo(int index, String nombre) {
+        nodos[index] = nombre;
+    }
+
+    public void agregarConexion(int origen, int destino, int distancia) {
+        matriz[origen][destino] = distancia;
+        matriz[destino][origen] = distancia;
+    }
+
+    public String getNodo(int index) {
+        return nodos[index];
+    }
+
+    public int getDistancia(int origen, int destino) {
+        return matriz[origen][destino];
+    }
+
+    public void mostrar() {
+        System.out.println("\n=== MATRIZ DE ADYACENCIA ===");
+        for (int i = 0; i < cantidad; i++) {
+            for (int j = 0; j < cantidad; j++) {
+                System.out.print(matriz[i][j] + "\t");
+            }
+            System.out.println();
+        }
     }
 }
