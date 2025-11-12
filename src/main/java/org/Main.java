@@ -4,7 +4,7 @@ import org.SimpleDictionaryADT;
 import org.*;
 import java.util.Scanner;
 
-public class Main { //======================================================================= MAIN ==========
+public class Main { //======================================================================= VARIABLES ==========
 
     // === VARIABLES GLOBALES ===
     static Scanner sc = new Scanner(System.in);
@@ -253,7 +253,7 @@ class ReportesYAnalisis { // SIMPLE DICTIONARY
         SimpleDictionaryADT dicEstados = new SimpleDictionary();
         SimpleDictionaryADT dicComidas = new SimpleDictionary();
 
-        // 🔹 Inicializar claves para evitar null
+        //  Inicializar claves para evitar null
         dicEstados.add(0, 0); // Pendientes
         dicEstados.add(1, 0); // Finalizados
         dicComidas.add(1, 0); // Pizza
@@ -264,12 +264,12 @@ class ReportesYAnalisis { // SIMPLE DICTIONARY
             Pedido p = Main.registros[i];
             if (p == null) continue;
 
-            // 🔹 Estado del pedido
+            //  Estado del pedido
             int keyEstado = (p.getEstado() == estadoPedido.FINALIZADO) ? 1 : 0;
             int valorEstado = dicEstados.get(keyEstado);
             dicEstados.add(keyEstado, valorEstado + 1);
 
-            // 🔹 Conteo de comidas (ahora recorre todos los platos)
+            //  Conteo de comidas (ahora recorre todos los platos)
             for (int j = 0; j < p.platos.length; j++) {
                 int keyComida = switch (p.platos[j]) {
                     case "Pizza" -> 1;
@@ -282,7 +282,7 @@ class ReportesYAnalisis { // SIMPLE DICTIONARY
             }
         }
 
-        // 🔹 Mostrar resultados
+        //  Mostrar resultados
         System.out.println("\nESTADO DE LOS PEDIDOS:");
         System.out.println("Pendientes: " + dicEstados.get(0));
         System.out.println("Finalizados: " + dicEstados.get(1));
